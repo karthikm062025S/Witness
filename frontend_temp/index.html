@@ -10,15 +10,15 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg:       #DDD0B3;
-  --surface:  #E4D9C6;
-  --elevated: #DAD0BB;
-  --text:     #2C1F13;
-  --tan:      #7A5030;
+  --bg:       #15110D;
+  --surface:  #1C1610;
+  --elevated: #231B13;
+  --text:     #EBE1D1;
+  --tan:      #C8A47E;
   --rust:     #C2522F;
-  --muted:    #8A7A68;
-  --border:   rgba(80, 55, 30, 0.14);
-  --border-strong: rgba(80, 55, 30, 0.26);
+  --muted:    #7A6D60;
+  --border:   rgba(200, 164, 126, 0.18);
+  --border-strong: rgba(200, 164, 126, 0.28);
 }
 
 html { scroll-behavior: smooth; }
@@ -40,7 +40,7 @@ body::after {
   z-index: 9999;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
   opacity: 0.5;
-  mix-blend-mode: multiply;
+  mix-blend-mode: overlay;
 }
 
 /* ── NAV ── */
@@ -53,13 +53,13 @@ nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(221, 208, 179, 0.94);
+  background: rgba(21, 17, 13, 0.94);
   backdrop-filter: blur(16px);
 }
 
 .nav-logo {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 19px;
+  font-size: 28px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -72,6 +72,9 @@ nav {
   display: flex;
   gap: 36px;
   list-style: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .nav-center a {
   font-size: 11px;
@@ -567,7 +570,6 @@ footer {
     <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
-  <div class="nav-badge">Beta v0.1</div>
 </nav>
 
 <!-- HERO -->
@@ -740,7 +742,6 @@ footer {
 <footer>
   <div class="footer-logo">Witness<span class="dot">.</span></div>
   <div class="footer-note">For informational use only. Not a substitute for legal advice.</div>
-  <div class="footer-badge">Beta v0.1</div>
 </footer>
 
 <script>
