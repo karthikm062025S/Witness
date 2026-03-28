@@ -10,15 +10,15 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg:       #DDD0B3;
-  --surface:  #E4D9C6;
-  --elevated: #DAD0BB;
-  --text:     #2C1F13;
-  --tan:      #7A5030;
+  --bg:       #15110D;
+  --surface:  #1C1610;
+  --elevated: #231B13;
+  --text:     #EBE1D1;
+  --tan:      #C8A47E;
   --rust:     #C2522F;
-  --muted:    #8A7A68;
-  --border:   rgba(80, 55, 30, 0.14);
-  --border-strong: rgba(80, 55, 30, 0.26);
+  --muted:    #7A6D60;
+  --border:   rgba(200, 164, 126, 0.18);
+  --border-strong: rgba(200, 164, 126, 0.28);
 }
 
 html { scroll-behavior: smooth; }
@@ -53,25 +53,49 @@ nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(221, 208, 179, 0.94);
+  background: rgba(21, 17, 13, 0.94);
   backdrop-filter: blur(16px);
 }
 
 .nav-logo {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 19px;
+  font-size: 28px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text);
   text-decoration: none;
 }
-.nav-logo .dot { color: var(--rust); }
+@keyframes shine-sweep {
+  0%   { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+.nav-logo .logo-text {
+  background-image: linear-gradient(120deg, #C8A47E 0%, #C8A47E 35%, #EBE1D1 50%, #C8A47E 65%, #C8A47E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-sweep 3s linear infinite;
+}
+.nav-logo .dot { color: var(--rust); -webkit-text-fill-color: var(--rust); }
+
+#particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
 
 .nav-center {
   display: flex;
   gap: 36px;
   list-style: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .nav-center a {
   font-size: 11px;
@@ -556,13 +580,41 @@ footer {
 .feature-item:nth-child(1) { animation: fadeUp 0.5s ease 0.3s both; }
 .feature-item:nth-child(2) { animation: fadeUp 0.5s ease 0.45s both; }
 .feature-item:nth-child(3) { animation: fadeUp 0.5s ease 0.6s both; }
+
+/* ── ADDRESS / JURISDICTION INPUTS ── */
+.address-fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.addr-input,
+.addr-select {
+  width: 100%;
+  background: var(--elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  padding: 11px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.addr-input::placeholder { color: var(--muted); }
+.addr-input:focus,
+.addr-select:focus { border-color: rgba(80, 55, 30, 0.5); }
+.addr-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A7A68' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">Witness<span class="dot">.</span></div>
+  <div class="nav-logo"><span class="logo-text">Witness</span><span class="dot">.</span></div>
   <ul class="nav-center">
     <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#faq">FAQ</a></li>
@@ -572,6 +624,7 @@ footer {
 
 <!-- HERO -->
 <main class="hero">
+  <canvas id="particle-canvas"></canvas>
   <div class="hero-left">
     <div class="eyebrow">AI-Powered Housing Inspection</div>
     <h1 class="hero-headline">Document<br>violations.</h1>
@@ -591,6 +644,13 @@ footer {
       </div>
       <p class="upload-main"><strong>Click to upload</strong> or drag &amp; drop</p>
       <p class="upload-sub">JPG · PNG · HEIC · up to 20MB</p>
+      <div class="address-fields">
+        <input type="text" id="addressInput" class="addr-input" placeholder="123 Turner St, Blacksburg, VA" autocomplete="street-address">
+        <select id="jurisdictionSelect" class="addr-select">
+          <option value="blacksburg">Blacksburg, VA</option>
+          <option value="montgomery_county">Montgomery County, VA</option>
+        </select>
+      </div>
       <button class="btn-upload" id="uploadBtn">Upload Photo</button>
       <input type="file" id="fileInput" accept="image/*">
     </div>
@@ -743,17 +803,53 @@ footer {
   <div class="footer-badge">Beta v0.1</div>
 </footer>
 
+<script src="config.js"></script>
 <script>
 const zone      = document.getElementById('uploadZone');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
 
+// ── INPUT VALIDATION ──────────────────────────────────────────────────────────
+const ALLOWED_MIME   = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/gif', 'image/bmp', 'image/tiff'];
+const ALLOWED_EXT    = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.gif', '.bmp', '.tiff', '.tif'];
+const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB — matches UI label
+const ALLOWED_JURISDICTIONS = ['blacksburg', 'montgomery_county'];
+
+function validateFile(file) {
+  if (!file) return 'No file selected.';
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (!ALLOWED_MIME.includes(file.type) && !ALLOWED_EXT.includes(ext)) {
+    return 'Please upload an image file (JPG, PNG, HEIC, or WebP).';
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return 'Photo must be under 20 MB. Please choose a smaller file.';
+  }
+  if (file.size === 0) {
+    return 'The selected file appears to be empty.';
+  }
+  return null; // valid
+}
+
+function validateAddress(address) {
+  if (!address) return 'Please enter the property address.';
+  if (address.length < 5) return 'Please enter a complete property address.';
+  if (address.length > 300) return 'Address is too long. Please enter a valid street address.';
+  // Block script injection attempts
+  if (/<|>|script|javascript:/i.test(address)) return 'Address contains invalid characters.';
+  return null; // valid
+}
+
+// ── UPLOAD ZONE CLICK — only trigger on the background, not on inputs/buttons ─
 uploadBtn.addEventListener('click', e => {
   e.stopPropagation();
   fileInput.click();
 });
 
-zone.addEventListener('click', () => fileInput.click());
+zone.addEventListener('click', e => {
+  // Do not open the file picker if the click was on a form control inside the zone
+  if (['INPUT', 'SELECT', 'BUTTON', 'OPTION', 'LABEL'].includes(e.target.tagName)) return;
+  fileInput.click();
+});
 
 zone.addEventListener('dragover', e => {
   e.preventDefault();
@@ -764,21 +860,175 @@ zone.addEventListener('drop', e => {
   e.preventDefault();
   zone.classList.remove('dragover');
   const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) processFile(file);
+  const err = validateFile(file);
+  if (err) { alert(err); return; }
+  processFile(file);
 });
 
 fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) processFile(e.target.files[0]);
+  const file = e.target.files[0];
+  const err = validateFile(file);
+  if (err) { alert(err); fileInput.value = ''; return; }
+  processFile(file);
 });
 
-function processFile(file) {
-  const reader = new FileReader();
-  reader.onload = ev => {
-    localStorage.setItem('witnessImage', ev.target.result);
-    window.location.href = 'loading.html';
-  };
-  reader.readAsDataURL(file);
+// ── MAIN UPLOAD FLOW ──────────────────────────────────────────────────────────
+async function processFile(file) {
+  const address      = document.getElementById('addressInput').value.trim();
+  const jurisdiction = document.getElementById('jurisdictionSelect').value;
+
+  // Validate address
+  const addrErr = validateAddress(address);
+  if (addrErr) { alert(addrErr); return; }
+
+  // Validate jurisdiction against known whitelist
+  if (!ALLOWED_JURISDICTIONS.includes(jurisdiction)) {
+    alert('Please select a valid jurisdiction.');
+    return;
+  }
+
+  uploadBtn.disabled    = true;
+  uploadBtn.textContent = 'Uploading\u2026';
+
+  try {
+    // 1. Get pre-signed S3 upload URL
+    const urlResp = await fetch(`${API_BASE_URL}/get-upload-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!urlResp.ok) throw new Error(`get-upload-url returned ${urlResp.status}`);
+    const { uploadUrl, photoKey } = await urlResp.json();
+    if (!uploadUrl || !photoKey) throw new Error('Invalid upload URL response from server');
+
+    // 2. PUT raw file blob directly to S3 (pre-signed URL — no auth header needed)
+    const putResp = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      body: file
+    });
+    if (!putResp.ok) throw new Error(`S3 upload returned ${putResp.status}`);
+
+    // 3. Persist metadata for loading.html
+    localStorage.setItem('witnessPhotoKey',    photoKey);
+    localStorage.setItem('witnessAddress',     address);
+    localStorage.setItem('witnessJurisdiction', jurisdiction);
+
+    // 4. Best-effort base64 preview for loading page background image
+    //    Wrapped in try/catch — photos > ~4 MB will exceed localStorage quota; graceful degradation
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try { localStorage.setItem('witnessImage', ev.target.result); } catch (_) { /* quota exceeded — loading page shows placeholder */ }
+      window.location.href = 'loading.html';
+    };
+    reader.onerror = () => { window.location.href = 'loading.html'; };
+    reader.readAsDataURL(file);
+
+  } catch (err) {
+    console.error('Upload error:', err);
+    alert('Upload failed: ' + err.message + '\n\nPlease check your connection and try again.');
+    uploadBtn.disabled    = false;
+    uploadBtn.textContent = 'Upload Photo';
+  }
 }
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { alpha: true, depth: false });
+  if (!gl) return;
+
+  const palette = ['#C8A47E', '#C2522F', '#EBE1D1'];
+  const COUNT = 180, SPREAD = 10, SPEED = 0.1, BASE_SIZE = 100, SIZE_RAND = 1, CAM_DIST = 20;
+
+  function hexRgb(hex) {
+    hex = hex.replace('#', '');
+    const n = parseInt(hex, 16);
+    return [(n>>16&255)/255, (n>>8&255)/255, (n&255)/255];
+  }
+
+  const vert = `
+    attribute vec3 position; attribute vec4 random; attribute vec3 color;
+    uniform mat4 modelMatrix, viewMatrix, projectionMatrix;
+    uniform float uTime, uSpread, uBaseSize, uSizeRandomness;
+    varying vec4 vRandom; varying vec3 vColor;
+    void main() {
+      vRandom = random; vColor = color;
+      vec3 pos = position * uSpread; pos.z *= 10.0;
+      vec4 mPos = modelMatrix * vec4(pos, 1.0);
+      float t = uTime;
+      mPos.x += sin(t * random.z + 6.28 * random.w) * mix(0.1, 1.5, random.x);
+      mPos.y += sin(t * random.y + 6.28 * random.x) * mix(0.1, 1.5, random.w);
+      mPos.z += sin(t * random.w + 6.28 * random.y) * mix(0.1, 1.5, random.z);
+      vec4 mvPos = viewMatrix * mPos;
+      gl_PointSize = uSizeRandomness == 0.0 ? uBaseSize : (uBaseSize * (1.0 + uSizeRandomness * (random.x - 0.5))) / length(mvPos.xyz);
+      gl_Position = projectionMatrix * mvPos;
+    }`;
+
+  const frag = `
+    precision highp float;
+    uniform float uTime; varying vec4 vRandom; varying vec3 vColor;
+    void main() {
+      vec2 uv = gl_PointCoord.xy;
+      float d = length(uv - vec2(0.5));
+      float circle = smoothstep(0.5, 0.4, d) * 0.8;
+      gl_FragColor = vec4(vColor + 0.2 * sin(uv.yxx + uTime + vRandom.y * 6.28), circle);
+    }`;
+
+  function compile(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+  gl.linkProgram(prog); gl.useProgram(prog);
+
+  const aPos = gl.getAttribLocation(prog, 'position'), aRand = gl.getAttribLocation(prog, 'random'), aColor = gl.getAttribLocation(prog, 'color');
+  const uModel = gl.getUniformLocation(prog, 'modelMatrix'), uView = gl.getUniformLocation(prog, 'viewMatrix'), uProj = gl.getUniformLocation(prog, 'projectionMatrix');
+  const uTime = gl.getUniformLocation(prog, 'uTime'), uSpreadU = gl.getUniformLocation(prog, 'uSpread'), uBaseSizeU = gl.getUniformLocation(prog, 'uBaseSize'), uSizeRandU = gl.getUniformLocation(prog, 'uSizeRandomness');
+
+  const positions = new Float32Array(COUNT * 3), randoms = new Float32Array(COUNT * 4), colors = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    let x, y, z, len;
+    do { x = Math.random()*2-1; y = Math.random()*2-1; z = Math.random()*2-1; len = x*x+y*y+z*z; } while (len > 1 || len === 0);
+    const r = Math.cbrt(Math.random());
+    positions.set([x*r, y*r, z*r], i*3);
+    randoms.set([Math.random(), Math.random(), Math.random(), Math.random()], i*4);
+    colors.set(hexRgb(palette[Math.floor(Math.random() * palette.length)]), i*3);
+  }
+
+  function mkBuf(data, attr, size) { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); gl.enableVertexAttribArray(attr); gl.vertexAttribPointer(attr, size, gl.FLOAT, false, 0, 0); }
+  mkBuf(positions, aPos, 3); mkBuf(randoms, aRand, 4); mkBuf(colors, aColor, 3);
+
+  gl.uniform1f(uSpreadU, SPREAD); gl.uniform1f(uBaseSizeU, BASE_SIZE); gl.uniform1f(uSizeRandU, SIZE_RAND);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(0,0,0,0);
+
+  function mul(a,b){const o=new Float32Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[i+k*4]*b[k+j*4];o[i+j*4]=s;}return o;}
+  function perspective(fov,aspect,near,far){const f=1/Math.tan(fov/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]);}
+  function rotX(m,a){const c=Math.cos(a),s=Math.sin(a);return mul(m,new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]));}
+  function rotY(m,a){const c=Math.cos(a),s=Math.sin(a);return mul(m,new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]));}
+  function rotZ(m,a){const c=Math.cos(a),s=Math.sin(a);return mul(m,new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]));}
+
+  const viewMatrix = new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,-CAM_DIST,1]);
+  gl.uniformMatrix4fv(uView, false, viewMatrix);
+
+  function resize(){const w=canvas.offsetWidth,h=canvas.offsetHeight;canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);gl.uniformMatrix4fv(uProj,false,perspective(15*Math.PI/180,w/h,0.1,100));}
+  window.addEventListener('resize', resize); resize();
+
+  let rz=0, lastTime=performance.now(), elapsed=0;
+  function frame(now){
+    const delta=now-lastTime; lastTime=now; elapsed+=delta*SPEED;
+    const t=elapsed*0.001, rx=Math.sin(elapsed*0.0002)*0.1, ry=Math.cos(elapsed*0.0005)*0.15;
+    rz+=0.01*SPEED;
+    let model=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+    model=rotX(model,rx); model=rotY(model,ry); model=rotZ(model,rz);
+    gl.uniformMatrix4fv(uModel, false, model);
+    gl.uniform1f(uTime, t);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>

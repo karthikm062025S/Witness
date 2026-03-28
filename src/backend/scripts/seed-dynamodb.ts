@@ -56,7 +56,8 @@ async function seedHousingCodes() {
   
   try {
     // Read housing codes data (relative to workspace root)
-    const dataPath = join(process.cwd(), "data/housing-codes.json");
+    // Go up two levels from src/backend to workspace root
+    const dataPath = join(process.cwd(), "../../data/housing-codes.json");
     const data = readFileSync(dataPath, "utf-8");
     const codes = JSON.parse(data);
     
@@ -82,7 +83,8 @@ async function seedEnforcementContacts() {
   
   try {
     // Read enforcement contacts data (relative to workspace root)
-    const dataPath = join(process.cwd(), "data/enforcement-contacts.json");
+    // Go up two levels from src/backend to workspace root
+    const dataPath = join(process.cwd(), "../../data/enforcement-contacts.json");
     const data = readFileSync(dataPath, "utf-8");
     const contacts = JSON.parse(data);
     

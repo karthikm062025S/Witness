@@ -1,166 +1,166 @@
-# WITNESS - Housing Code Violation Detector
+# Witness — AI Housing Violation Detector
 
-A mobile-first web app that helps Virginia tenants document housing violations using AI-powered photo analysis, code matching, and automated complaint letter generation.
+Witness helps Virginia tenants document housing code violations using AI vision, real code databases, and automated complaint letter generation.
 
-## 🎯 What It Does
-
-1. **Upload Photo** - Tenant photographs a housing issue (mold, broken fixtures, etc.)
-2. **AI Analysis** - Computer vision identifies observable conditions
-3. **Code Matching** - Matches observations to Virginia building codes (VMC § and Va. Code §)
-4. **Letter Generation** - Creates formal complaint letter with enforcement contacts
-5. **Filing Guidance** - Provides step-by-step instructions for submitting to code enforcement
-
-## 🏗️ Architecture
-
-**3-Stage AI Pipeline** orchestrated by AWS Step Functions:
-- **Stage 1**: Vision analysis using Amazon Bedrock Claude Haiku 4.5
-- **Stage 2**: Code matching with anti-hallucination verification
-- **Stage 3**: Complaint letter generation with enforcement contacts
-
-**Tech Stack**:
-- Frontend: React 18 + Vite + Tailwind CSS
-- Backend: AWS Lambda (Node.js 22, TypeScript)
-- AI: Amazon Bedrock (Claude Haiku 4.5 with vision)
-- Database: DynamoDB (housing codes + contacts)
-- Storage: S3 (photo uploads)
-- API: API Gateway HTTP API
-- Hosting: AWS Amplify
-
-## 📁 Project Structure
-
-```
-witness/
-├── .kiro/              # Kiro IDE configuration & specs
-├── data/               # Housing codes & enforcement contacts
-├── demo-photos/        # Test images (5 violation examples)
-├── infra/              # Infrastructure as code
-├── prompts/            # AI system prompts for 3 stages
-├── scripts/            # Utility scripts (DynamoDB seeding)
-├── src/
-│   ├── backend/        # Lambda functions & utilities
-│   ├── frontend/       # React application
-│   └── shared/         # TypeScript types
-├── ARCHITECTURE.md     # Detailed system architecture
-├── BACKEND-READY-TO-MERGE.md  # Backend integration guide
-└── README.md           # This file
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-- AWS Account with Bedrock access enabled
-- Node.js 22+
-- Kiro IDE (optional but recommended)
-
-### Setup
-
-1. **Clone and install**
-   ```bash
-   git clone <repo-url>
-   cd witness
-   ```
-
-2. **Review documentation**
-   - Read `ARCHITECTURE.md` for system design
-   - Read `BACKEND-READY-TO-MERGE.md` for API integration
-   - Check `.kiro/specs/witness-backend-api/requirements.md` for detailed requirements
-
-3. **AWS Setup** (see BACKEND-READY-TO-MERGE.md for details)
-   - Backend is already deployed to AWS
-   - API Base URL: `https://mbqglb3kxc.execute-api.us-east-1.amazonaws.com`
-
-4. **Frontend Setup**
-   ```bash
-   cd src/frontend
-   npm install
-   # Create .env file with API_BASE_URL
-   npm run dev
-   ```
-
-## 📊 Current Status
-
-✅ **Completed**:
-- Backend fully implemented and deployed to AWS
-- All 6 Lambda functions working
-- DynamoDB seeded with 28 items
-- API Gateway configured with CORS
-- Step Functions Express workflow deployed
-- Frontend implementation complete
-
-## 🎓 Key Features
-
-### Anti-Hallucination Citation Verification
-Unlike ChatGPT, Stage 2 verifies every AI-generated code citation against the actual DynamoDB database. Any citation not found is filtered out, ensuring 100% accuracy.
-
-### Virginia-Specific Citations
-Uses correct Virginia citation format:
-- `VMC §` for Virginia Maintenance Code
-- `Va. Code §` for Virginia statutes
-- Never uses `IPMC §`
-
-### Mobile-First Design
-Optimized for tenants documenting issues on their phones with camera capture and touch-friendly UI.
-
-### Complete Filing Guidance
-Provides multiple filing options:
-- Online form submission
-- In-person delivery
-- Phone reporting
-- Escalation paths
-
-## 📚 Documentation
-
-- **ARCHITECTURE.md** - Complete system architecture, data flow, AWS services
-- **BACKEND-READY-TO-MERGE.md** - Backend integration guide with API details
-- **.kiro/specs/** - Formal requirements, design, and tasks
-- **.kiro/steering/** - AI guidance files for development
-- **prompts/** - AI system prompts for each pipeline stage
-
-## 🔒 Security
-
-**Hackathon Scope**:
-- No authentication (demo only)
-- CORS set to `*`
-- File validation (jpg/png/webp, max 10MB)
-- Pre-signed URLs expire in 5 minutes
-- No PII storage
-
-**Production Considerations**:
-- Add API authentication
-- Restrict CORS
-- Implement rate limiting
-- Add user accounts
-- Encrypt sensitive data
-
-## 💰 Cost
-
-**Hackathon Demo**: < $1 total
-- S3: ~$0.01
-- DynamoDB: $0 (on-demand, minimal)
-- Lambda: $0 (free tier)
-- Bedrock: ~$0.50
-- Step Functions: ~$0.01
-- API Gateway: $0 (free tier)
-- Amplify: $0 (free tier)
-
-## 🤝 Contributing
-
-This is a hackathon project. For questions or contributions, please open an issue.
-
-## 📄 License
-
-[Add license information]
-
-## 🙏 Acknowledgments
-
-- Virginia housing codes from official VMC and Va. Code sources
-- Town of Blacksburg code enforcement contacts
-- AWS for cloud infrastructure
-- Anthropic Claude for AI capabilities
+Upload a photo → get a formal, legally-grounded complaint letter in seconds.
 
 ---
 
-**Built for**: AWS + Kiro Hackathon  
-**Region**: Virginia (Blacksburg focus)  
-**Status**: Backend Deployed, Frontend Integration Ready  
-**Last Updated**: March 28, 2026
+## How It Works
+
+1. **Upload** — Tenant photographs a housing issue (electrical hazard, mold, structural damage, etc.)
+2. **Analyze** — Claude Haiku 4.5 vision identifies observable conditions in the photo
+3. **Match** — Conditions are cross-referenced against a real DynamoDB housing code database (anti-hallucination: only verified citations appear)
+4. **Generate** — A formal complaint letter is created with exact code citations and local enforcement contacts
+
+---
+
+## Architecture
+
+```
+Browser
+  │
+  ├─ GET  /get-upload-url  ──► Lambda (get-upload-url)
+  │                                   └─ S3 pre-signed PUT URL
+  │
+  ├─ PUT  [pre-signed URL] ──► S3 Bucket (witness-photos-hackathon)
+  │
+  └─ POST /analyze  ─────────► Lambda (orchestrator)
+                                        └─ Step Functions Express Workflow
+                                                ├─ Stage 1: Lambda (stage1-vision)
+                                                │     └─ Bedrock Claude Haiku 4.5 (vision)
+                                                │           Describes visible conditions → JSON
+                                                │
+                                                ├─ Stage 2: Lambda (stage2-matching)
+                                                │     └─ DynamoDB query (HousingCodes table)
+                                                │           Verifies each AI citation against DB
+                                                │           Filters hallucinated codes out
+                                                │
+                                                └─ Stage 3: Lambda (stage3-complaint)
+                                                      └─ Bedrock Claude Haiku 4.5 (text)
+                                                            DynamoDB query (EnforcementContacts)
+                                                            Generates formal complaint letter
+```
+
+### AWS Services
+
+| Service | Purpose |
+|---|---|
+| API Gateway | HTTP API — single entry point for browser |
+| Lambda (×5) | Business logic — get-upload-url, orchestrator, stage1, stage2, stage3 |
+| Step Functions | Express workflow — orchestrates the 3-stage pipeline |
+| S3 | Photo storage via pre-signed upload URLs |
+| DynamoDB | Housing codes + enforcement contacts database |
+| Bedrock | Claude Haiku 4.5 — vision analysis + complaint generation |
+| IAM | WitnessLambdaRole — scoped permissions for all Lambdas |
+
+### AI Pipeline (3 Stages)
+
+**Stage 1 — Vision Analysis**
+- Downloads photo from S3
+- Calls Bedrock with image + prompt
+- Returns structured JSON: observations with category + confidence
+
+**Stage 2 — Code Matching (Anti-Hallucination)**
+- Takes Stage 1 observations
+- Calls Bedrock to suggest relevant code sections
+- Queries DynamoDB to verify each suggestion is a real code
+- Filters out any unverified citations → 100% accuracy guarantee
+
+**Stage 3 — Complaint Generation**
+- Takes verified violations from Stage 2
+- Queries DynamoDB for local enforcement contacts by jurisdiction
+- Calls Bedrock to generate a formal complaint letter
+- Returns violations + letter + contacts as final JSON
+
+---
+
+## Project Structure
+
+```
+witness/
+├── frontend/                   # Production frontend (3 HTML files)
+│   ├── index.html              # Upload page (WebGL particles, drag-drop)
+│   ├── loading.html            # Scan animation (WebGL grid scan)
+│   ├── results.html            # Results page (complaint letter + contacts)
+│   ├── config.js               # API base URL + mock fallback
+│   └── serve.mjs               # Local dev server
+│
+├── src/backend/
+│   ├── lambdas/
+│   │   ├── get-upload-url.ts   # Generates S3 pre-signed upload URLs
+│   │   ├── orchestrator.ts     # API Gateway handler → Step Functions
+│   │   ├── stage1-vision.ts    # Bedrock vision analysis
+│   │   ├── stage2-matching.ts  # DynamoDB code verification
+│   │   ├── stage3-complaint.ts # Letter generation + contacts
+│   │   └── send-complaint.ts   # (Future) email delivery
+│   ├── utils/
+│   │   ├── bedrock-client.ts   # Bedrock API wrapper (text + vision)
+│   │   ├── dynamodb-client.ts  # DynamoDB wrapper
+│   │   └── cors.ts             # CORS headers
+│   ├── types/index.ts          # Shared TypeScript types
+│   ├── scripts/
+│   │   └── seed-dynamodb.ts    # Seeds HousingCodes + EnforcementContacts
+│   └── data/
+│       ├── housing-codes.json  # 22 Virginia housing code entries (VMC + Va. Code §)
+│       └── enforcement-contacts.json  # 6 Blacksburg enforcement contacts
+│
+├── data/                       # Source data files
+├── demo-photos/                # Sample violation photos for testing
+└── prompts/                    # AI prompt templates for each stage
+```
+
+---
+
+## Live Deployment
+
+| Resource | Value |
+|---|---|
+| API Base URL | `https://mbqglb3kxc.execute-api.us-east-1.amazonaws.com` |
+| S3 Bucket | `witness-photos-hackathon` (us-east-1) |
+| Bedrock Model | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| DynamoDB | `HousingCodes` + `EnforcementContacts` tables |
+
+---
+
+## Running Locally
+
+```bash
+# Serve frontend
+cd frontend
+node serve.mjs
+# Open http://localhost:3000
+
+# Rebuild backend (after code changes)
+cd src/backend
+npm run build
+npx esbuild dist/lambdas/stage1-vision.js --bundle --platform=node --target=node22 --outfile=dist/bundle-stage1.js --external:@aws-sdk/*
+# Upload zip to Lambda via AWS console
+```
+
+---
+
+## Data
+
+**Housing Codes (22 entries)** — Virginia Maintenance Code + Virginia statutes:
+- `VMC § 305.1` Interior Condition
+- `VMC § 604.1–605.1` Electrical System
+- `VMC § 702.1–704.1` Fire Safety
+- `Va. Code § 55.1-1220` Landlord duties (habitability, mold, heating, etc.)
+
+**Enforcement Contacts (6 entries)** — Blacksburg, VA:
+- Code Inspector, Planning & Building, Online form, In-person, State escalation (DHCD)
+
+---
+
+## Security Notes
+
+- No authentication (hackathon scope)
+- CORS set to `*` — restrict for production
+- Pre-signed S3 URLs expire in 5 minutes
+- No PII stored — photos processed and not retained
+- Input validation on address (XSS protection) and file type/size
+
+---
+
+Built for the **AWS + Kiro Hackathon** · Virginia (Blacksburg) · March 2026

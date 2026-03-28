@@ -51,13 +51,14 @@ export const handler = async (event: any) => {
     
     // Check execution status
     if (execution.status === "FAILED") {
-      console.error("Step Functions execution failed:", execution.error);
+      console.error("Step Functions execution failed:", execution.error, execution.cause);
       return {
         statusCode: 500,
         headers: corsHeaders,
         body: JSON.stringify({
           error: "Pipeline execution failed",
           details: execution.error || "Unknown error",
+          cause: execution.cause || "No cause provided",
           executionArn: execution.executionArn
         })
       };

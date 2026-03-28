@@ -4,7 +4,7 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
 // Hardcoded model ID - Claude Haiku 4.5 (latest)
-const MODEL_ID = "anthropic.claude-haiku-4-5-20251001-v1:0";
+const MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
 const REGION = "us-east-1";
 
 // Initialize Bedrock client

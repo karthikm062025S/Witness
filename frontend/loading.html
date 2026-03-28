@@ -317,35 +317,35 @@ body::after {
 <div id="matchVisual">
   <div class="match-grid">
     <div class="match-row" id="mr1">
-      <div class="code-chip">NYC HMC § 27-2013</div>
+      <div class="code-chip">Scanning…</div>
       <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
       <div class="match-info">
-        <div class="match-desc">Mold &amp; Moisture Damage</div>
-        <div class="match-status confirmed">Violation Confirmed</div>
+        <div class="match-desc">Analyzing visible conditions</div>
+        <div class="match-status potential">Processing</div>
       </div>
     </div>
     <div class="match-row" id="mr2">
-      <div class="code-chip">NYC HMC § 27-2005</div>
+      <div class="code-chip">Cross-referencing…</div>
       <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
       <div class="match-info">
-        <div class="match-desc">Structural Deterioration</div>
-        <div class="match-status confirmed">Violation Confirmed</div>
+        <div class="match-desc">Matching housing codes</div>
+        <div class="match-status potential">Processing</div>
       </div>
     </div>
     <div class="match-row" id="mr3">
-      <div class="code-chip">NYC HMC § 27-2029</div>
+      <div class="code-chip">Verifying…</div>
       <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
       <div class="match-info">
-        <div class="match-desc">Inadequate Heat Supply</div>
-        <div class="match-status confirmed">Violation Confirmed</div>
+        <div class="match-desc">Confirming violations</div>
+        <div class="match-status potential">Processing</div>
       </div>
     </div>
     <div class="match-row" id="mr4">
-      <div class="code-chip">NYC HMC § 27-2011</div>
+      <div class="code-chip">Generating…</div>
       <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
       <div class="match-info">
-        <div class="match-desc">Defective Plumbing</div>
-        <div class="match-status potential">Potential Match</div>
+        <div class="match-desc">Building complaint letter</div>
+        <div class="match-status potential">Processing</div>
       </div>
     </div>
   </div>
@@ -382,7 +382,74 @@ body::after {
   <div class="stage-title" id="stageTitle">Scanning image</div>
 </div>
 
+<script src="config.js"></script>
 <script>
+// ──────────────────────────────────────────────
+// API ANALYSIS
+// ──────────────────────────────────────────────
+let apiResult        = null;
+let animationComplete = false;
+
+async function runAnalysis() {
+  const photoKey     = localStorage.getItem('witnessPhotoKey');
+  const address      = localStorage.getItem('witnessAddress');
+  const jurisdiction = localStorage.getItem('witnessJurisdiction');
+
+  // No upload data present (direct URL access or upload error) — use mock
+  if (!photoKey || !address || !jurisdiction) {
+    apiResult = MOCK_RESULT;
+    if (animationComplete) navigateToResults();
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoKey, address, jurisdiction })
+    });
+    if (!resp.ok) throw new Error(`analyze failed: ${resp.status}`);
+    apiResult = await resp.json();
+  } catch (err) {
+    console.error('Analysis failed, falling back to mock:', err);
+    apiResult = MOCK_RESULT;
+  }
+
+  // If Stage 2 match visual is already showing, update the rows now
+  const matchEl = document.getElementById('matchVisual');
+  if (matchEl && matchEl.classList.contains('show')) {
+    populateMatchRows();
+  }
+  // If animation already finished waiting for us, navigate immediately
+  if (animationComplete) navigateToResults();
+}
+
+function populateMatchRows() {
+  if (!apiResult || !apiResult.violations) return;
+  const rowIds = ['mr1', 'mr2', 'mr3', 'mr4'];
+  apiResult.violations.slice(0, 4).forEach((v, i) => {
+    const row = document.getElementById(rowIds[i]);
+    if (!row) return;
+    row.querySelector('.code-chip').textContent = v.code_display;
+    row.querySelector('.match-desc').textContent = v.title;
+    const statusEl = row.querySelector('.match-status');
+    statusEl.textContent = v.confidence === 'high' ? 'Violation Confirmed' : 'Potential Match';
+    statusEl.className   = 'match-status ' + (v.confidence === 'high' ? 'confirmed' : 'potential');
+  });
+  // Hide rows that have no corresponding violation
+  for (let i = apiResult.violations.length; i < 4; i++) {
+    const row = document.getElementById(rowIds[i]);
+    if (row) row.style.display = 'none';
+  }
+}
+
+function navigateToResults() {
+  localStorage.setItem('witnessResults', JSON.stringify(apiResult));
+  window.location.href = 'results.html';
+}
+
+runAnalysis(); // Fire API call immediately — runs in parallel with animation
+
 // ──────────────────────────────────────────────
 // IMAGE
 // ──────────────────────────────────────────────
@@ -696,10 +763,26 @@ setTimeout(() => {
   rows.forEach((r, i) => {
     setTimeout(() => r.classList.add('show'), i * 380);
   });
+  // Populate match rows with real violation data once all rows have animated in
+  setTimeout(populateMatchRows, 380 * 4 + 100);
 
-  // Navigate to results
+  // After Stage 2 animation: navigate if API is done, otherwise wait
   setTimeout(() => {
-    window.location.href = 'results.html';
+    animationComplete = true;
+    if (apiResult) {
+      navigateToResults();
+    } else {
+      // API still in flight — update UI to "finalizing" state and wait
+      titleEl.style.opacity   = '0';
+      titleEl.style.transform = 'translateY(6px)';
+      setTimeout(() => {
+        eyebrow.textContent   = 'Stage 2 of 2';
+        titleEl.textContent   = 'Finalizing report\u2026';
+        liveText.textContent  = 'Processing';
+        titleEl.style.opacity = '1';
+        titleEl.style.transform = 'translateY(0)';
+      }, 350);
+    }
   }, STAGE2_MS);
 
 }, STAGE1_MS);
