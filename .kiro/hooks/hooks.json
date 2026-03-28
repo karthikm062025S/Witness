@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Auto-commit on save",
+    "eventType": "fileEdited",
+    "filePatterns": ["src/**/*.ts", "src/**/*.tsx"],
+    "hookAction": "runCommand",
+    "command": "cd /workspace && git add -A && git commit -m 'auto: save progress' --no-verify 2>/dev/null || true"
+  },
+  {
+    "name": "TypeScript type check",
+    "eventType": "fileEdited",
+    "filePatterns": ["src/**/*.ts", "src/**/*.tsx"],
+    "hookAction": "runCommand",
+    "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
+  }
+]

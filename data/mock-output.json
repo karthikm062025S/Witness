@@ -1,0 +1,35 @@
+{
+  "observations": [
+    {
+      "description": "Dark discoloration and moisture staining are visible on the ceiling near the corner.",
+      "category": "environmental",
+      "confidence": "high"
+    }
+  ],
+  "violations": [
+    {
+      "code_section": "VMC_305_1",
+      "code_display": "VMC § 305.1",
+      "title": "Interior Condition — General",
+      "match_reasoning": "The photo shows visible interior ceiling damage and staining, which is consistent with an interior condition that may no longer be sanitary or properly maintained.",
+      "plain_english": "The inside of the unit appears to have visible ceiling damage or moisture-related deterioration. Virginia maintenance rules require interior areas to be kept in good repair and sanitary condition.",
+      "confidence": "high",
+      "severity": "moderate"
+    },
+    {
+      "code_section": "VA_55_1_1220_A_5",
+      "code_display": "Va. Code § 55.1-1220(A)(5)",
+      "title": "Landlord Duty — Prevent Moisture and Mold",
+      "match_reasoning": "Visible moisture staining and mold-like discoloration are consistent with conditions involving moisture accumulation and possible mold growth, which Virginia law requires landlords to address promptly.",
+      "plain_english": "Virginia law says landlords have to prevent moisture buildup and mold growth and respond when visible mold-related conditions are present.",
+      "confidence": "high",
+      "severity": "high"
+    }
+  ],
+  "complaint_letter": "Building Official,\nTown of Blacksburg Code Enforcement\n\nI am writing to request an inspection of housing conditions at the documented property location. On the date listed in the evidence log, visible ceiling discoloration and moisture staining were observed inside the rental unit.\n\nBased on the documented conditions, the issues may implicate VMC § 305.1 regarding interior condition and Va. Code § 55.1-1220(A)(5) regarding the landlord's duty to prevent moisture accumulation and mold growth.\n\nI respectfully request that your office review these conditions and determine whether an inspection or further enforcement action is appropriate.\n\nThank you for your time and attention to this matter.\n\nSincerely,\n[Tenant Name]\n\nNote: This documentation was generated for informational purposes only. It does not constitute legal advice. Consult a qualified attorney for legal guidance.",
+  "evidence_log": {
+    "timestamp": "2026-03-28T10:30:00",
+    "location": "Blacksburg, VA",
+    "photo_reference": "mold.webp"
+  }
+}

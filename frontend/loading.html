@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Witness — Scanning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:    #15110D;
+  --cream: #EBE1D1;
+  --tan:   #C8A47E;
+  --rust:  #C2522F;
+  --muted: #7A6D60;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── IMAGE LAYER ── */
+#imgBg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+#uploadedImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+  filter: saturate(0.5) brightness(0.85);
+  transition: opacity 0.8s ease;
+}
+
+/* ── VIGNETTE ── */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse at center, transparent 20%, rgba(21,17,13,0.65) 90%),
+    linear-gradient(to top, var(--bg) 0%, rgba(21,17,13,0.3) 38%, transparent 55%),
+    linear-gradient(to bottom, rgba(21,17,13,0.55) 0%, transparent 25%);
+  pointer-events: none;
+}
+
+/* ── WEBGL SCAN CANVAS ── */
+#scanCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  mix-blend-mode: screen;
+  transition: opacity 1s ease;
+}
+
+/* ── STAGE 2: MATCHING VISUAL ── */
+#matchVisual {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.9s ease;
+}
+#matchVisual.show { opacity: 1; }
+
+.match-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px;
+  background: rgba(21, 17, 13, 0.55);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(200, 164, 126, 0.12);
+  border-radius: 4px;
+}
+
+.match-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+  transform: translateY(7px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.match-row.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.code-chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--tan);
+  border: 1px solid rgba(200, 164, 126, 0.3);
+  padding: 6px 14px;
+  border-radius: 2px;
+  min-width: 172px;
+  text-align: center;
+  white-space: nowrap;
+  background: rgba(21, 17, 13, 0.4);
+}
+
+.arrow-connector {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.conn-line {
+  width: 36px;
+  height: 1px;
+  background: rgba(200, 164, 126, 0.35);
+}
+.conn-arrow {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid rgba(200, 164, 126, 0.35);
+}
+
+.match-info { display: flex; flex-direction: column; gap: 2px; }
+.match-desc {
+  font-size: 13px;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+}
+.match-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.match-status.confirmed { color: var(--rust); }
+.match-status.potential { color: var(--muted); }
+
+/* ── TOP BAR ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 26px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.logo .dot { color: var(--rust); }
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--tan);
+}
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rust);
+  animation: pulse 1.3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.85); }
+}
+
+/* ── CORNER BRACKETS ── */
+.bracket {
+  position: fixed;
+  width: 22px;
+  height: 22px;
+  z-index: 5;
+  opacity: 0.45;
+  transition: opacity 0.5s ease;
+}
+.bracket.tl { top: 78px; left: 48px; border-top: 1px solid var(--tan); border-left: 1px solid var(--tan); }
+.bracket.tr { top: 78px; right: 48px; border-top: 1px solid var(--tan); border-right: 1px solid var(--tan); }
+.bracket.bl { bottom: 108px; left: 48px; border-bottom: 1px solid var(--tan); border-left: 1px solid var(--tan); }
+.bracket.br { bottom: 108px; right: 48px; border-bottom: 1px solid var(--tan); border-right: 1px solid var(--tan); }
+
+/* ── SCAN PROGRESS (right vertical) ── */
+.scan-sidebar {
+  position: fixed;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  transition: opacity 0.5s ease;
+}
+.scan-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--cream);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.scan-unit {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.scan-bar-v {
+  width: 1px;
+  height: 80px;
+  background: rgba(200, 164, 126, 0.2);
+  position: relative;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.scan-bar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--tan);
+  height: 0%;
+  transition: height 0.1s linear;
+}
+
+/* ── BOTTOM STATUS ── */
+.status-panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 0 48px 44px;
+}
+
+.stage-track {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.pip {
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(200, 164, 126, 0.18);
+  width: 28px;
+  transition: background 0.4s ease, width 0.4s ease;
+}
+.pip.active { background: var(--tan); width: 52px; }
+.pip.done   { background: rgba(194, 82, 47, 0.55); width: 28px; }
+
+.stage-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rust);
+  margin-bottom: 8px;
+}
+
+.stage-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 4vw, 52px);
+  font-weight: 700;
+  color: var(--cream);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+}
+</style>
+</head>
+<body>
+
+<!-- Layers -->
+<div id="imgBg"><img id="uploadedImg" src="" alt=""></div>
+<div class="vignette"></div>
+<canvas id="scanCanvas"></canvas>
+
+<!-- Stage 2 match visual -->
+<div id="matchVisual">
+  <div class="match-grid">
+    <div class="match-row" id="mr1">
+      <div class="code-chip">Scanning…</div>
+      <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
+      <div class="match-info">
+        <div class="match-desc">Analyzing visible conditions</div>
+        <div class="match-status potential">Processing</div>
+      </div>
+    </div>
+    <div class="match-row" id="mr2">
+      <div class="code-chip">Cross-referencing…</div>
+      <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
+      <div class="match-info">
+        <div class="match-desc">Matching housing codes</div>
+        <div class="match-status potential">Processing</div>
+      </div>
+    </div>
+    <div class="match-row" id="mr3">
+      <div class="code-chip">Verifying…</div>
+      <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
+      <div class="match-info">
+        <div class="match-desc">Confirming violations</div>
+        <div class="match-status potential">Processing</div>
+      </div>
+    </div>
+    <div class="match-row" id="mr4">
+      <div class="code-chip">Generating…</div>
+      <div class="arrow-connector"><div class="conn-line"></div><div class="conn-arrow"></div></div>
+      <div class="match-info">
+        <div class="match-desc">Building complaint letter</div>
+        <div class="match-status potential">Processing</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Corner brackets -->
+<div class="bracket tl"></div>
+<div class="bracket tr"></div>
+<div class="bracket bl"></div>
+<div class="bracket br"></div>
+
+<!-- Scan sidebar -->
+<div class="scan-sidebar" id="scanSidebar">
+  <div class="scan-pct" id="scanPct">0</div>
+  <div class="scan-unit">% scanned</div>
+  <div class="scan-bar-v">
+    <div class="scan-bar-fill" id="scanBarFill"></div>
+  </div>
+</div>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">Witness<span class="dot">.</span></div>
+  <div class="live-pill"><div class="live-dot"></div><span id="liveText">Analyzing</span></div>
+</div>
+
+<!-- Bottom status -->
+<div class="status-panel">
+  <div class="stage-track">
+    <div class="pip active" id="pip1"></div>
+    <div class="pip" id="pip2"></div>
+  </div>
+  <div class="stage-eyebrow" id="stageEyebrow">Stage 1 of 2</div>
+  <div class="stage-title" id="stageTitle">Scanning image</div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ──────────────────────────────────────────────
+// API ANALYSIS
+// ──────────────────────────────────────────────
+let apiResult        = null;
+let animationComplete = false;
+
+async function runAnalysis() {
+  const photoKey     = localStorage.getItem('witnessPhotoKey');
+  const address      = localStorage.getItem('witnessAddress');
+  const jurisdiction = localStorage.getItem('witnessJurisdiction');
+
+  // No upload data present (direct URL access or upload error) — use mock
+  if (!photoKey || !address || !jurisdiction) {
+    apiResult = MOCK_RESULT;
+    if (animationComplete) navigateToResults();
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoKey, address, jurisdiction })
+    });
+    if (!resp.ok) throw new Error(`analyze failed: ${resp.status}`);
+    apiResult = await resp.json();
+  } catch (err) {
+    console.error('Analysis failed, falling back to mock:', err);
+    apiResult = MOCK_RESULT;
+  }
+
+  // If Stage 2 match visual is already showing, update the rows now
+  const matchEl = document.getElementById('matchVisual');
+  if (matchEl && matchEl.classList.contains('show')) {
+    populateMatchRows();
+  }
+  // If animation already finished waiting for us, navigate immediately
+  if (animationComplete) navigateToResults();
+}
+
+function populateMatchRows() {
+  if (!apiResult || !apiResult.violations) return;
+  const rowIds = ['mr1', 'mr2', 'mr3', 'mr4'];
+  apiResult.violations.slice(0, 4).forEach((v, i) => {
+    const row = document.getElementById(rowIds[i]);
+    if (!row) return;
+    row.querySelector('.code-chip').textContent = v.code_display;
+    row.querySelector('.match-desc').textContent = v.title;
+    const statusEl = row.querySelector('.match-status');
+    statusEl.textContent = v.confidence === 'high' ? 'Violation Confirmed' : 'Potential Match';
+    statusEl.className   = 'match-status ' + (v.confidence === 'high' ? 'confirmed' : 'potential');
+  });
+  // Hide rows that have no corresponding violation
+  for (let i = apiResult.violations.length; i < 4; i++) {
+    const row = document.getElementById(rowIds[i]);
+    if (row) row.style.display = 'none';
+  }
+}
+
+function navigateToResults() {
+  localStorage.setItem('witnessResults', JSON.stringify(apiResult));
+  window.location.href = 'results.html';
+}
+
+runAnalysis(); // Fire API call immediately — runs in parallel with animation
+
+// ──────────────────────────────────────────────
+// IMAGE
+// ──────────────────────────────────────────────
+const img = document.getElementById('uploadedImg');
+const stored = localStorage.getItem('witnessImage');
+img.src = stored || 'https://placehold.co/1920x1080/1a1410/2a1e12?text=+';
+
+// ──────────────────────────────────────────────
+// WEBGL GRID SCAN (ported from GridScan.jsx)
+// ──────────────────────────────────────────────
+const canvas = document.getElementById('scanCanvas');
+const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+
+const VERT = `
+  attribute vec2 aPos;
+  varying vec2 vUv;
+  void main(){
+    vUv = aPos * 0.5 + 0.5;
+    gl_Position = vec4(aPos, 0.0, 1.0);
+  }
+`;
+
+const FRAG = `
+  #extension GL_OES_standard_derivatives : enable
+  precision highp float;
+
+  uniform vec3  iResolution;
+  uniform float iTime;
+  uniform vec2  uSkew;
+  uniform float uTilt;
+  uniform float uYaw;
+  uniform float uLineThickness;
+  uniform vec3  uLinesColor;
+  uniform vec3  uScanColor;
+  uniform float uGridScale;
+  uniform float uLineJitter;
+  uniform float uScanOpacity;
+  uniform float uScanDirection;
+  uniform float uNoise;
+  uniform float uBloomOpacity;
+  uniform float uScanGlow;
+  uniform float uScanSoftness;
+  uniform float uPhaseTaper;
+  uniform float uScanDuration;
+  uniform float uScanDelay;
+  uniform float uScanCount;
+
+  varying vec2 vUv;
+
+  float smoother01(float a, float b, float x){
+    float t = clamp((x - a) / max(1e-5, (b - a)), 0.0, 1.0);
+    return t*t*t*(t*(t*6.0 - 15.0) + 10.0);
+  }
+
+  void mainImage(out vec4 fragColor, in vec2 fragCoord){
+    vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
+    vec3 ro = vec3(0.0);
+    vec3 rd = normalize(vec3(p, 2.0));
+
+    float cR = cos(uTilt), sR = sin(uTilt);
+    rd.xy = mat2(cR, -sR, sR, cR) * rd.xy;
+    float cY = cos(uYaw),  sY = sin(uYaw);
+    rd.xz = mat2(cY, -sY, sY, cY) * rd.xz;
+    vec2 skew = clamp(uSkew, vec2(-0.7), vec2(0.7));
+    rd.xy += skew * rd.z;
+
+    vec3 color = vec3(0.0);
+    float minT = 1e20;
+    float gridScale = max(1e-5, uGridScale);
+    vec2 gridUV = vec2(0.0);
+    float hitIsY = 1.0;
+
+    for(int i = 0; i < 4; i++){
+      float isY   = (i < 2) ? 1.0 : 0.0;
+      float fi    = float(i);
+      float tMix  = (i < 2) ? fi : (fi - 2.0);
+      float pos   = mix(-0.2, 0.2, tMix)*isY + mix(-0.5, 0.5, tMix)*(1.0-isY);
+      float num   = pos - (isY*ro.y + (1.0-isY)*ro.x);
+      float den   = isY*rd.y + (1.0-isY)*rd.x;
+      float t     = num / den;
+      vec3  h     = ro + rd*t;
+      float db    = smoothstep(0.0, 3.0, h.z);
+      h.xy       += skew * 0.15 * db;
+      bool  use   = t > 0.0 && t < minT;
+      gridUV  = use ? mix(h.zy, h.xz, isY)/gridScale : gridUV;
+      minT    = use ? t : minT;
+      hitIsY  = use ? isY : hitIsY;
+    }
+
+    vec3 hit  = ro + rd*minT;
+    float dist = length(hit - ro);
+
+    float jAmt = clamp(uLineJitter, 0.0, 1.0);
+    if(jAmt > 0.0){
+      vec2 j = vec2(sin(gridUV.y*2.7+iTime*1.8), cos(gridUV.x*2.3-iTime*1.6)) * (0.15*jAmt);
+      gridUV += j;
+    }
+
+    float fx=fract(gridUV.x), fy=fract(gridUV.y);
+    float ax=min(fx,1.0-fx),  ay=min(fy,1.0-fy);
+    float wx=fwidth(gridUV.x), wy=fwidth(gridUV.y);
+    float hp=max(0.0,uLineThickness)*0.5;
+    float lineX=1.0-smoothstep(hp*wx, hp*wx+wx, ax);
+    float lineY=1.0-smoothstep(hp*wy, hp*wy+wy, ay);
+    float primaryMask=max(lineX, lineY);
+
+    vec2 gridUV2=(hitIsY>0.5 ? hit.xz : hit.zy)/gridScale;
+    if(jAmt>0.0){
+      vec2 j2=vec2(cos(gridUV2.y*2.1-iTime*1.4), sin(gridUV2.x*2.5+iTime*1.7))*(0.15*jAmt);
+      gridUV2+=j2;
+    }
+    float fx2=fract(gridUV2.x), fy2=fract(gridUV2.y);
+    float ax2=min(fx2,1.0-fx2), ay2=min(fy2,1.0-fy2);
+    float wx2=fwidth(gridUV2.x), wy2=fwidth(gridUV2.y);
+    float lx2=1.0-smoothstep(hp*wx2,hp*wx2+wx2,ax2);
+    float ly2=1.0-smoothstep(hp*wy2,hp*wy2+wy2,ay2);
+    float edx=min(abs(hit.x-(-0.5)),abs(hit.x-0.5));
+    float edy=min(abs(hit.y-(-0.2)),abs(hit.y-0.2));
+    float edg=1.0-smoothstep(gridScale*0.5, gridScale*2.0, mix(edy,edx,hitIsY));
+    float altMask=max(lx2,ly2)*edg;
+    float lineMask=max(primaryMask, altMask);
+    float fade=exp(-dist*2.0);
+
+    float dur=max(0.05,uScanDuration);
+    float del=max(0.0,uScanDelay);
+    float sigma=max(0.001, 0.18*max(0.1,uScanGlow)*uScanSoftness);
+    float sigmaA=sigma*2.0;
+    float combinedPulse=0.0, combinedAura=0.0;
+
+    float phase=0.0;
+    if(uScanDirection>1.5){
+      float t2=mod(max(0.0,iTime-del), 2.0*dur);
+      phase=(t2<dur) ? (t2/dur) : (1.0-(t2-dur)/dur);
+    } else {
+      float tc=mod(iTime, dur+del);
+      phase=clamp((tc-del)/dur, 0.0, 1.0);
+    }
+    float scanZ=phase*2.0;
+    float dz=abs(hit.z-scanZ);
+    float lb=exp(-0.5*(dz*dz)/(sigma*sigma));
+    float tp=clamp(uPhaseTaper,0.0,0.49);
+    float pw=smoother01(0.0,tp,phase)*(1.0-smoother01(1.0-tp,1.0,phase));
+    combinedPulse += lb*pw*clamp(uScanOpacity,0.0,1.0);
+    combinedAura  += exp(-0.5*(dz*dz)/(sigmaA*sigmaA))*0.25*pw*clamp(uScanOpacity,0.0,1.0);
+
+    vec3 gridCol=uLinesColor*lineMask*fade;
+    vec3 scanCol=uScanColor*combinedPulse;
+    vec3 scanAura=uScanColor*combinedAura;
+    color=gridCol+scanCol+scanAura;
+
+    float n=fract(sin(dot(gl_FragCoord.xy+vec2(iTime*123.4),vec2(12.9898,78.233)))*43758.5453123);
+    color+=(n-0.5)*uNoise;
+    color=clamp(color,0.0,1.0);
+
+    float alpha=clamp(max(lineMask,combinedPulse),0.0,1.0);
+    float gx2=1.0-smoothstep(hp*wx*2.0,hp*wx*2.0+wx*2.0,ax);
+    float gy2=1.0-smoothstep(hp*wy*2.0,hp*wy*2.0+wy*2.0,ay);
+    alpha=max(alpha, max(gx2,gy2)*fade*clamp(uBloomOpacity,0.0,1.0));
+    fragColor=vec4(color, alpha);
+  }
+
+  void main(){
+    vec4 c;
+    mainImage(c, vUv*iResolution.xy);
+    gl_FragColor=c;
+  }
+`;
+
+let prog, U = {}, W = 0, H = 0;
+const t0 = performance.now();
+let scanRunning = true;
+
+if (gl) {
+  gl.getExtension('OES_standard_derivatives');
+
+  function mkShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+      console.error('Shader compile:', gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  prog = gl.createProgram();
+  gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+    console.error('Link error:', gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, 'aPos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  [
+    'iResolution','iTime','uSkew','uTilt','uYaw','uLineThickness',
+    'uLinesColor','uScanColor','uGridScale','uLineJitter',
+    'uScanOpacity','uScanDirection','uNoise','uBloomOpacity','uScanGlow',
+    'uScanSoftness','uPhaseTaper','uScanDuration','uScanDelay','uScanCount'
+  ].forEach(n => { U[n] = gl.getUniformLocation(prog, n); });
+
+  gl.enable(gl.BLEND);
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    gl.viewport(0, 0, W, H);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function render() {
+    if (!scanRunning) return;
+    const t = (performance.now() - t0) / 1000;
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform3f(U.iResolution, W, H, 1);
+    gl.uniform1f(U.iTime, t);
+    gl.uniform2f(U.uSkew, 0.0, -0.08);
+    gl.uniform1f(U.uTilt, 0.32);
+    gl.uniform1f(U.uYaw, 0.04);
+    gl.uniform1f(U.uLineThickness, 1.5);
+    gl.uniform3f(U.uLinesColor, 0.42, 0.26, 0.14);   // warm dark brown
+    gl.uniform3f(U.uScanColor,  0.96, 0.80, 0.58);   // warm tan/gold
+    gl.uniform1f(U.uGridScale, 0.095);
+    gl.uniform1f(U.uLineJitter, 0.06);
+    gl.uniform1f(U.uScanOpacity, 0.88);
+    gl.uniform1f(U.uScanDirection, 2.0);              // pingpong
+    gl.uniform1f(U.uNoise, 0.011);
+    gl.uniform1f(U.uBloomOpacity, 0.38);
+    gl.uniform1f(U.uScanGlow, 0.75);
+    gl.uniform1f(U.uScanSoftness, 2.1);
+    gl.uniform1f(U.uPhaseTaper, 0.08);
+    gl.uniform1f(U.uScanDuration, 2.4);
+    gl.uniform1f(U.uScanDelay, 0.25);
+    gl.uniform1f(U.uScanCount, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render();
+}
+
+// ──────────────────────────────────────────────
+// STAGE SEQUENCE
+// ──────────────────────────────────────────────
+const pip1       = document.getElementById('pip1');
+const pip2       = document.getElementById('pip2');
+const eyebrow    = document.getElementById('stageEyebrow');
+const titleEl    = document.getElementById('stageTitle');
+const matchVis   = document.getElementById('matchVisual');
+const scanSide   = document.getElementById('scanSidebar');
+const scanPctEl  = document.getElementById('scanPct');
+const scanFill   = document.getElementById('scanBarFill');
+const liveText   = document.getElementById('liveText');
+
+// Stage 1: animate scan percentage 0→100 over 4s
+const STAGE1_MS  = 4400;
+const STAGE2_MS  = 3600;
+
+let startT = performance.now();
+let pct = 0;
+
+function tickPct() {
+  const elapsed = performance.now() - startT;
+  pct = Math.min(100, Math.round((elapsed / STAGE1_MS) * 100));
+  scanPctEl.textContent = pct;
+  scanFill.style.height = pct + '%';
+  if (pct < 100) {
+    requestAnimationFrame(tickPct);
+  }
+}
+requestAnimationFrame(tickPct);
+
+// Transition to Stage 2
+setTimeout(() => {
+  // Fade out scan canvas + sidebar
+  canvas.style.opacity = '0.15';
+  scanSide.style.opacity = '0';
+
+  // Update status bar
+  pip1.classList.remove('active');
+  pip1.classList.add('done');
+  pip2.classList.add('active');
+
+  titleEl.style.opacity = '0';
+  titleEl.style.transform = 'translateY(6px)';
+  setTimeout(() => {
+    eyebrow.textContent   = 'Stage 2 of 2';
+    titleEl.textContent   = 'Matching housing codes';
+    liveText.textContent  = 'Cross-referencing';
+    titleEl.style.opacity = '1';
+    titleEl.style.transform = 'translateY(0)';
+  }, 350);
+
+  // Show match visual
+  matchVis.classList.add('show');
+  const rows = [
+    document.getElementById('mr1'),
+    document.getElementById('mr2'),
+    document.getElementById('mr3'),
+    document.getElementById('mr4'),
+  ];
+  rows.forEach((r, i) => {
+    setTimeout(() => r.classList.add('show'), i * 380);
+  });
+  // Populate match rows with real violation data once all rows have animated in
+  setTimeout(populateMatchRows, 380 * 4 + 100);
+
+  // After Stage 2 animation: navigate if API is done, otherwise wait
+  setTimeout(() => {
+    animationComplete = true;
+    if (apiResult) {
+      navigateToResults();
+    } else {
+      // API still in flight — update UI to "finalizing" state and wait
+      titleEl.style.opacity   = '0';
+      titleEl.style.transform = 'translateY(6px)';
+      setTimeout(() => {
+        eyebrow.textContent   = 'Stage 2 of 2';
+        titleEl.textContent   = 'Finalizing report\u2026';
+        liveText.textContent  = 'Processing';
+        titleEl.style.opacity = '1';
+        titleEl.style.transform = 'translateY(0)';
+      }, 350);
+    }
+  }, STAGE2_MS);
+
+}, STAGE1_MS);
+</script>
+</body>
+</html>
