@@ -66,6 +66,18 @@ nav {
   color: var(--text);
   text-decoration: none;
 }
+@keyframes shine-sweep {
+  0%   { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+.nav-logo .logo-text {
+  background-image: linear-gradient(120deg, #C8A47E 0%, #C8A47E 35%, #EBE1D1 50%, #C8A47E 65%, #C8A47E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-sweep 3s linear infinite;
+}
 .nav-logo .dot { color: var(--rust); }
 
 .nav-center {
@@ -559,13 +571,22 @@ footer {
 .feature-item:nth-child(1) { animation: fadeUp 0.5s ease 0.3s both; }
 .feature-item:nth-child(2) { animation: fadeUp 0.5s ease 0.45s both; }
 .feature-item:nth-child(3) { animation: fadeUp 0.5s ease 0.6s both; }
+
+#particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">Witness<span class="dot">.</span></div>
+  <div class="nav-logo"><span class="logo-text">Witness</span><span class="dot">.</span></div>
   <ul class="nav-center">
     <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#faq">FAQ</a></li>
@@ -574,6 +595,7 @@ footer {
 
 <!-- HERO -->
 <main class="hero">
+  <canvas id="particle-canvas"></canvas>
   <div class="hero-left">
     <div class="eyebrow">AI-Powered Housing Inspection</div>
     <h1 class="hero-headline">Document<br>violations.</h1>
@@ -780,6 +802,169 @@ function processFile(file) {
   };
   reader.readAsDataURL(file);
 }
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const gl = canvas.getContext('webgl', { alpha: true, depth: false });
+  if (!gl) return;
+
+  const palette = ['#C8A47E', '#C2522F', '#EBE1D1'];
+  const COUNT = 200, SPREAD = 10, SPEED = 0.1, BASE_SIZE = 100, SIZE_RAND = 1, CAM_DIST = 20;
+
+  function hexRgb(hex) {
+    hex = hex.replace('#', '');
+    const n = parseInt(hex, 16);
+    return [(n>>16&255)/255, (n>>8&255)/255, (n&255)/255];
+  }
+
+  const vert = `
+    attribute vec3 position;
+    attribute vec4 random;
+    attribute vec3 color;
+    uniform mat4 modelMatrix;
+    uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+    uniform float uTime;
+    uniform float uSpread;
+    uniform float uBaseSize;
+    uniform float uSizeRandomness;
+    varying vec4 vRandom;
+    varying vec3 vColor;
+    void main() {
+      vRandom = random;
+      vColor = color;
+      vec3 pos = position * uSpread;
+      pos.z *= 10.0;
+      vec4 mPos = modelMatrix * vec4(pos, 1.0);
+      float t = uTime;
+      mPos.x += sin(t * random.z + 6.28 * random.w) * mix(0.1, 1.5, random.x);
+      mPos.y += sin(t * random.y + 6.28 * random.x) * mix(0.1, 1.5, random.w);
+      mPos.z += sin(t * random.w + 6.28 * random.y) * mix(0.1, 1.5, random.z);
+      vec4 mvPos = viewMatrix * mPos;
+      if (uSizeRandomness == 0.0) {
+        gl_PointSize = uBaseSize;
+      } else {
+        gl_PointSize = (uBaseSize * (1.0 + uSizeRandomness * (random.x - 0.5))) / length(mvPos.xyz);
+      }
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `;
+
+  const frag = `
+    precision highp float;
+    uniform float uTime;
+    uniform float uAlphaParticles;
+    varying vec4 vRandom;
+    varying vec3 vColor;
+    void main() {
+      vec2 uv = gl_PointCoord.xy;
+      float d = length(uv - vec2(0.5));
+      float circle = smoothstep(0.5, 0.4, d) * 0.8;
+      gl_FragColor = vec4(vColor + 0.2 * sin(uv.yxx + uTime + vRandom.y * 6.28), circle);
+    }
+  `;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const aPos   = gl.getAttribLocation(prog, 'position');
+  const aRand  = gl.getAttribLocation(prog, 'random');
+  const aColor = gl.getAttribLocation(prog, 'color');
+  const uModel = gl.getUniformLocation(prog, 'modelMatrix');
+  const uView  = gl.getUniformLocation(prog, 'viewMatrix');
+  const uProj  = gl.getUniformLocation(prog, 'projectionMatrix');
+  const uTime  = gl.getUniformLocation(prog, 'uTime');
+  const uSpreadU   = gl.getUniformLocation(prog, 'uSpread');
+  const uBaseSizeU = gl.getUniformLocation(prog, 'uBaseSize');
+  const uSizeRandU = gl.getUniformLocation(prog, 'uSizeRandomness');
+  const uAlpha     = gl.getUniformLocation(prog, 'uAlphaParticles');
+
+  const positions = new Float32Array(COUNT * 3);
+  const randoms   = new Float32Array(COUNT * 4);
+  const colors    = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    let x, y, z, len;
+    do { x = Math.random()*2-1; y = Math.random()*2-1; z = Math.random()*2-1; len = x*x+y*y+z*z; }
+    while (len > 1 || len === 0);
+    const r = Math.cbrt(Math.random());
+    positions.set([x*r, y*r, z*r], i*3);
+    randoms.set([Math.random(), Math.random(), Math.random(), Math.random()], i*4);
+    colors.set(hexRgb(palette[Math.floor(Math.random() * palette.length)]), i*3);
+  }
+
+  function mkBuf(data, attr, size) {
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(attr);
+    gl.vertexAttribPointer(attr, size, gl.FLOAT, false, 0, 0);
+  }
+  mkBuf(positions, aPos, 3);
+  mkBuf(randoms, aRand, 4);
+  mkBuf(colors, aColor, 3);
+
+  gl.uniform1f(uSpreadU, SPREAD);
+  gl.uniform1f(uBaseSizeU, BASE_SIZE);
+  gl.uniform1f(uSizeRandU, SIZE_RAND);
+  gl.uniform1f(uAlpha, 1.0);
+
+  function mul(a, b) {
+    const o = new Float32Array(16);
+    for (let i=0;i<4;i++) for (let j=0;j<4;j++) { let s=0; for (let k=0;k<4;k++) s+=a[i+k*4]*b[k+j*4]; o[i+j*4]=s; }
+    return o;
+  }
+  function perspective(fov, aspect, near, far) {
+    const f = 1/Math.tan(fov/2), nf = 1/(near-far);
+    return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
+  }
+  function rotX(m,a) { const c=Math.cos(a),s=Math.sin(a); return mul(m,new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1])); }
+  function rotY(m,a) { const c=Math.cos(a),s=Math.sin(a); return mul(m,new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1])); }
+  function rotZ(m,a) { const c=Math.cos(a),s=Math.sin(a); return mul(m,new Float32Array([c,s,0,0, -s,c,0,0, 0,0,1,0, 0,0,0,1])); }
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 0);
+
+  const viewMatrix = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,-CAM_DIST,1]);
+  gl.uniformMatrix4fv(uView, false, viewMatrix);
+
+  function resize() {
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    canvas.width = w; canvas.height = h;
+    gl.viewport(0, 0, w, h);
+    gl.uniformMatrix4fv(uProj, false, perspective(15*Math.PI/180, w/h, 0.1, 100));
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  let rz = 0, lastTime = performance.now(), elapsed = 0;
+  function frame(now) {
+    const delta = now - lastTime; lastTime = now; elapsed += delta * SPEED;
+    const t = elapsed * 0.001;
+    const rx = Math.sin(elapsed * 0.0002) * 0.1;
+    const ry = Math.cos(elapsed * 0.0005) * 0.15;
+    rz += 0.01 * SPEED;
+    let model = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    model = rotX(model, rx); model = rotY(model, ry); model = rotZ(model, rz);
+    gl.uniformMatrix4fv(uModel, false, model);
+    gl.uniform1f(uTime, t);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>
