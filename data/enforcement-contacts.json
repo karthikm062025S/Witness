@@ -1,0 +1,52 @@
+[
+  {
+    "jurisdiction": "blacksburg",
+    "contact_type": "online_form",
+    "display_name": "Town of Blacksburg Online Request Form",
+    "method": "web",
+    "website": "https://tobweb.org/ayr/",
+    "notes": "Primary online form for filing or submitting complaints."
+  },
+  {
+    "jurisdiction": "blacksburg",
+    "contact_type": "in_person",
+    "display_name": "Town of Blacksburg Planning and Building Department",
+    "method": "in_person",
+    "address": "300 South Main St, Blacksburg, VA 24060",
+    "hours": "Mon-Fri 8:00 AM - 5:00 PM",
+    "notes": "Use for in-person filing or document drop-off."
+  },
+  {
+    "jurisdiction": "blacksburg",
+    "contact_type": "code_inspector",
+    "display_name": "Blacksburg Code Inspector",
+    "method": "phone",
+    "phone": "(540) 443-1612",
+    "hours": "Mon-Fri 8:00 AM - 5:00 PM"
+  },
+  {
+    "jurisdiction": "blacksburg",
+    "contact_type": "planning_building",
+    "display_name": "Blacksburg Planning and Building",
+    "method": "phone",
+    "phone": "(540) 443-1300",
+    "hours": "Mon-Fri 8:00 AM - 5:00 PM"
+  },
+  {
+    "jurisdiction": "montgomery_county",
+    "contact_type": "county_contact",
+    "display_name": "Montgomery County Building and Inspection Contact",
+    "method": "phone",
+    "phone": "(540) 382-6120 ext. 160",
+    "notes": "Use for properties outside the Town of Blacksburg."
+  },
+  {
+    "jurisdiction": "virginia",
+    "contact_type": "state_escalation",
+    "display_name": "Virginia Department of Housing and Community Development",
+    "method": "phone_web",
+    "phone": "(804) 371-7150",
+    "website": "https://dhcd.virginia.gov",
+    "notes": "Escalation path if local enforcement is unresponsive."
+  }
+]

@@ -1,0 +1,200 @@
+[
+  {
+    "category": "environmental",
+    "code_section": "VA_55_1_1220_5",
+    "code_display": "Va. Code § 55.1-1220(A)(5)",
+    "title": "Landlord Duty — Prevent Moisture and Mold",
+    "requirement_text": "The landlord must keep the premises in a condition that prevents moisture buildup and mold growth, respond promptly to tenant notices, and promptly remediate visible mold.",
+    "plain_english": "If there is visible mold or ongoing moisture problems, the landlord has to address it promptly under Virginia law.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "environmental",
+    "code_section": "VA_55_1_1231",
+    "code_display": "Va. Code § 55.1-1231",
+    "title": "Relocation During Mold Remediation",
+    "requirement_text": "If mold in the dwelling materially affects health or safety, the landlord may require temporary relocation for remediation for up to 30 days and must provide a comparable unit or hotel room at no cost to the tenant.",
+    "plain_english": "If mold is serious enough to affect health or safety, the landlord may move the tenant temporarily, but the landlord has to cover the replacement housing.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "environmental",
+    "code_section": "VMC_305_1",
+    "code_display": "VMC § 305.1",
+    "title": "Interior Condition — General",
+    "requirement_text": "The interior of a structure and its equipment must be kept in good repair, structurally sound, and sanitary.",
+    "plain_english": "The inside of the apartment has to be safe, maintained, and sanitary.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "environmental",
+    "code_section": "VMC_304_7",
+    "code_display": "VMC § 304.7",
+    "title": "Roofs and Drainage",
+    "requirement_text": "The roof and flashing must be sound and tight, and drainage must prevent rain from causing dampness or deterioration in walls or the interior of the structure.",
+    "plain_english": "Roof leaks and bad drainage that let water into the apartment can violate the maintenance code.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "structural",
+    "code_section": "VA_55_1_1220_1",
+    "code_display": "Va. Code § 55.1-1220(A)(1)",
+    "title": "Landlord Duty — Follow Building and Housing Codes",
+    "requirement_text": "The landlord must comply with applicable building and housing codes that materially affect health and safety.",
+    "plain_english": "If a condition violates a health-or-safety code, the landlord is required to comply with that code.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "structural",
+    "code_section": "VA_55_1_1220_2",
+    "code_display": "Va. Code § 55.1-1220(A)(2)",
+    "title": "Landlord Duty — Keep Premises Fit and Habitable",
+    "requirement_text": "The landlord must make repairs and do what is necessary to put and keep the premises in a fit and habitable condition.",
+    "plain_english": "The landlord has to make needed repairs to keep the rental livable.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "structural",
+    "code_section": "VMC_307_1",
+    "code_display": "VMC § 307.1",
+    "title": "Handrails and Guards",
+    "requirement_text": "Handrails and guards that were required or provided when the building was constructed must be maintained in accordance with the applicable building code.",
+    "plain_english": "Loose, broken, or missing handrails and guards can be a code issue.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "structural",
+    "code_section": "VMC_302_3",
+    "code_display": "VMC § 302.3",
+    "title": "Sidewalks, Walkways, and Stairs",
+    "requirement_text": "Sidewalks, walkways, stairs, driveways, parking spaces, and similar areas regulated under the building code must be kept in proper repair and free from hazardous conditions.",
+    "plain_english": "Unsafe stairs, walkways, or similar access areas can violate the maintenance code.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VMC_504_1",
+    "code_display": "VMC § 504.1",
+    "title": "Plumbing Systems — General",
+    "requirement_text": "Required or provided plumbing systems and facilities must be maintained in accordance with the applicable building code.",
+    "plain_english": "The building’s plumbing systems have to be properly maintained.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VMC_504_2",
+    "code_display": "VMC § 504.2",
+    "title": "Plumbing Fixtures",
+    "requirement_text": "Plumbing fixtures must be maintained in a safe, sanitary, and working condition.",
+    "plain_english": "Sinks, toilets, tubs, and similar fixtures must be usable, sanitary, and functioning.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VMC_504_3",
+    "code_display": "VMC § 504.3",
+    "title": "Plumbing System Hazards",
+    "requirement_text": "If a plumbing system in a structure creates a hazard to the public, the occupants, or the structure, the defects must be corrected to eliminate the hazard.",
+    "plain_english": "Dangerous plumbing conditions have to be fixed.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VMC_505_1",
+    "code_display": "VMC § 505.1",
+    "title": "Water Supply",
+    "requirement_text": "Required or provided water supply systems must be maintained, and all water supply systems must be free from obstructions, defects, and leaks.",
+    "plain_english": "Water supply lines must work properly and not leak.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VMC_505_4",
+    "code_display": "VMC § 505.4",
+    "title": "Water Heating Facilities",
+    "requirement_text": "Water heating facilities must be maintained, including required temperature-and-pressure relief valves and discharge piping on water heaters.",
+    "plain_english": "Hot-water equipment has to be maintained in working condition.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "plumbing",
+    "code_section": "VA_55_1_1220_7",
+    "code_display": "Va. Code § 55.1-1220(A)(7)",
+    "title": "Landlord Duty — Running Water, Hot Water, and Heat",
+    "requirement_text": "The landlord must supply running water and reasonable amounts of hot water at all times, plus heat in season, except in units where those services are under the tenant’s exclusive control or supplied by direct utility connection.",
+    "plain_english": "Landlords generally have to provide water, hot water, and heat unless the lease setup legally puts that under the tenant’s control.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "heating",
+    "code_section": "VMC_602_2",
+    "code_display": "VMC § 602.2",
+    "title": "Heat Supply",
+    "requirement_text": "Owners and operators of covered residential buildings who furnish heat must supply heat from October 15 to May 1 sufficient to maintain at least 68°F in habitable rooms, bathrooms, and toilet rooms, subject to the design-temperature exception in the code.",
+    "plain_english": "If the landlord provides the heat, indoor living spaces generally have to be kept at least 68°F during heating season.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "electrical",
+    "code_section": "VMC_604_1",
+    "code_display": "VMC § 604.1",
+    "title": "Electrical System",
+    "requirement_text": "Required or provided electrical systems and facilities must be maintained in accordance with the applicable building code.",
+    "plain_english": "The building’s electrical system has to be properly maintained.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "electrical",
+    "code_section": "VMC_604_3",
+    "code_display": "VMC § 604.3",
+    "title": "Electrical System Hazards",
+    "requirement_text": "If the electrical system in a structure creates a hazard because of deterioration, damage, or similar reasons, the defects must be corrected to eliminate the hazard.",
+    "plain_english": "Dangerous wiring or damaged electrical conditions have to be fixed.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "electrical",
+    "code_section": "VMC_605_1",
+    "code_display": "VMC § 605.1",
+    "title": "Electrical Components",
+    "requirement_text": "Electrical equipment, wiring, and appliances must be maintained in accordance with the applicable building code.",
+    "plain_english": "Electrical parts and appliances must be kept up to code and in safe condition.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "fire_safety",
+    "code_section": "VMC_704_1",
+    "code_display": "VMC § 704.1",
+    "title": "Fire Protection Systems — General",
+    "requirement_text": "Systems, devices, and equipment used to detect a fire, actuate an alarm, or suppress or control a fire must be maintained in operable condition at all times.",
+    "plain_english": "Fire-protection equipment has to stay operational.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "fire_safety",
+    "code_section": "VMC_704_6",
+    "code_display": "VMC § 704.6",
+    "title": "Single-Station and Multiple-Station Smoke Alarms",
+    "requirement_text": "Required or provided single-station and multiple-station smoke alarms must be maintained in accordance with the applicable building code.",
+    "plain_english": "Smoke alarms that are required or installed have to be kept working.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "fire_safety",
+    "code_section": "VA_55_1_1220_8",
+    "code_display": "Va. Code § 55.1-1220(A)(8)",
+    "title": "Landlord Duty — Smoke Alarm Certificate",
+    "requirement_text": "At least once every 12 months, the landlord must provide the tenant a certificate stating that all smoke alarms are present, have been inspected, and are in good working order.",
+    "plain_english": "The landlord is supposed to certify periodically that the smoke alarms are there and working.",
+    "jurisdiction": "virginia"
+  },
+  {
+    "category": "pest",
+    "code_section": "VMC_309_1",
+    "code_display": "VMC § 309.1",
+    "title": "Infestation",
+    "requirement_text": "All structures must be kept free from insect and rodent infestation, and any infestation found must be promptly exterminated by approved processes that are not injurious to human health, with steps taken to prevent reinfestation.",
+    "plain_english": "If there are roaches, mice, rats, or similar pests, the infestation has to be addressed promptly and properly.",
+    "jurisdiction": "virginia"
+  }
+]

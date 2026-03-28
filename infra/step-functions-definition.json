@@ -1,0 +1,74 @@
+{
+  "Comment": "WITNESS 3-stage AI pipeline for housing code violation detection",
+  "StartAt": "Stage1Vision",
+  "States": {
+    "Stage1Vision": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:stage1-vision",
+      "Comment": "Analyze photo using Bedrock vision to identify observable housing conditions",
+      "Next": "Stage2Matching",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleError"
+        }
+      ]
+    },
+    "Stage2Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:stage2-matching",
+      "Comment": "Match observations to Virginia codes with citation verification",
+      "Next": "Stage3Complaint",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleError"
+        }
+      ]
+    },
+    "Stage3Complaint": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:stage3-complaint",
+      "Comment": "Generate formal complaint letter with enforcement contacts",
+      "End": true,
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleError"
+        }
+      ]
+    },
+    "HandleError": {
+      "Type": "Fail",
+      "Error": "PipelineExecutionFailed",
+      "Cause": "One of the pipeline stages failed"
+    }
+  }
+}
