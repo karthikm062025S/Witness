@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Witness — Document Violations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:       #DDD0B3;
+  --surface:  #E4D9C6;
+  --elevated: #DAD0BB;
+  --text:     #2C1F13;
+  --tan:      #7A5030;
+  --rust:     #C2522F;
+  --muted:    #8A7A68;
+  --border:   rgba(80, 55, 30, 0.14);
+  --border-strong: rgba(80, 55, 30, 0.26);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Grain texture */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
+/* ── NAV ── */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 52px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(221, 208, 179, 0.94);
+  backdrop-filter: blur(16px);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-logo .dot { color: var(--rust); }
+
+.nav-center {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+}
+.nav-center a {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.nav-center a:hover { color: var(--tan); }
+
+.nav-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--rust);
+  border: 1px solid rgba(194, 82, 47, 0.35);
+  padding: 5px 12px;
+  border-radius: 2px;
+}
+
+/* ── HERO ── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 85px);
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 700px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(194, 82, 47, 0.07) 0%, transparent 68%);
+  top: 50%;
+  left: 28%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 52px;
+  position: relative;
+  z-index: 2;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust);
+  margin-bottom: 28px;
+}
+.eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--rust);
+  flex-shrink: 0;
+}
+
+.hero-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(58px, 6.5vw, 96px);
+  font-weight: 700;
+  line-height: 0.93;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.hero-subline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 3.8vw, 58px);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--tan);
+  margin-bottom: 40px;
+  line-height: 1.1;
+}
+
+.hero-body {
+  font-size: 14.5px;
+  line-height: 1.78;
+  color: var(--muted);
+  max-width: 390px;
+  margin-bottom: 52px;
+}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  position: relative;
+  background: var(--surface);
+  border: 1.5px dashed rgba(80, 55, 30, 0.22);
+  border-radius: 3px;
+  padding: 44px 40px;
+  max-width: 460px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  transition: border-color 0.25s ease, background 0.25s ease;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(80, 55, 30, 0.04), transparent 65%);
+  pointer-events: none;
+}
+
+.upload-zone:hover {
+  border-color: rgba(80, 55, 30, 0.4);
+  background: var(--elevated);
+}
+
+.upload-zone.dragover {
+  border-color: var(--rust);
+  background: rgba(194, 82, 47, 0.06);
+}
+
+.upload-icon-ring {
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(80, 55, 30, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tan);
+  margin-bottom: 4px;
+  transition: border-color 0.2s ease;
+}
+.upload-zone:hover .upload-icon-ring {
+  border-color: rgba(80, 55, 30, 0.38);
+}
+
+.upload-main {
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.5;
+}
+.upload-main strong {
+  color: var(--tan);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(80, 55, 30, 0.3);
+  text-underline-offset: 3px;
+}
+
+.upload-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.btn-upload {
+  background: var(--rust);
+  color: #F5EDE0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 13px 38px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(194, 82, 47, 0.22), 0 8px 24px rgba(194, 82, 47, 0.12);
+}
+.btn-upload:hover { opacity: 0.86; }
+.btn-upload:active { transform: scale(0.97); opacity: 1; }
+.btn-upload:focus-visible { outline: 2px solid var(--tan); outline-offset: 3px; }
+
+#fileInput { display: none; }
+
+/* ── RIGHT PANEL ── */
+.hero-right {
+  border-left: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(80, 55, 30, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 55, 30, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.feature-item {
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+  padding: 36px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s ease;
+  cursor: default;
+}
+.feature-item:last-child { border-bottom: none; }
+.feature-item:hover { background: rgba(80, 55, 30, 0.04); }
+
+.feature-item::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid var(--border-strong);
+  border-right: 1px solid var(--border-strong);
+}
+
+.f-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--rust);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.f-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.f-desc {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 280px;
+}
+
+/* ── SECTION SHARED ── */
+.section-wrap {
+  padding: 96px 52px;
+  border-top: 1px solid var(--border);
+  position: relative;
+}
+
+.section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust);
+  margin-bottom: 20px;
+}
+.section-eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--rust);
+}
+
+.section-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 56px;
+}
+
+/* ── HOW IT WORKS ── */
+.hiw-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hiw-card {
+  background: var(--surface);
+  padding: 40px 36px 44px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+.hiw-card:hover { background: var(--elevated); }
+
+.hiw-card::after {
+  content: '';
+  position: absolute;
+  top: 20px; right: 20px;
+  width: 12px; height: 12px;
+  border-top: 1px solid var(--border-strong);
+  border-right: 1px solid var(--border-strong);
+}
+
+.hiw-step {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rust);
+  margin-bottom: 16px;
+}
+
+.hiw-icon {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tan);
+  margin-bottom: 20px;
+}
+
+.hiw-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+
+.hiw-body {
+  font-size: 13px;
+  line-height: 1.72;
+  color: var(--muted);
+}
+
+.hiw-detail {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hiw-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--tan);
+  text-transform: uppercase;
+}
+.hiw-tag::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--tan);
+  flex-shrink: 0;
+}
+
+/* ── FAQ ── */
+.faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.faq-item {
+  background: var(--surface);
+  padding: 32px 36px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+.faq-item:hover { background: var(--elevated); }
+
+.faq-q {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.25;
+  padding-right: 24px;
+}
+
+.faq-a {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.faq-a strong {
+  color: var(--tan);
+  font-weight: 500;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.footer-logo .dot { color: var(--rust); }
+
+.footer-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  text-align: center;
+}
+
+.footer-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--rust);
+  border: 1px solid rgba(194, 82, 47, 0.3);
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+
+/* ── ENTRANCE ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.eyebrow        { animation: fadeUp 0.6s ease 0.1s both; }
+.hero-headline  { animation: fadeUp 0.6s ease 0.2s both; }
+.hero-subline   { animation: fadeUp 0.6s ease 0.3s both; }
+.hero-body      { animation: fadeUp 0.6s ease 0.4s both; }
+.upload-zone    { animation: fadeUp 0.6s ease 0.5s both; }
+
+.feature-item:nth-child(1) { animation: fadeUp 0.5s ease 0.3s both; }
+.feature-item:nth-child(2) { animation: fadeUp 0.5s ease 0.45s both; }
+.feature-item:nth-child(3) { animation: fadeUp 0.5s ease 0.6s both; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Witness<span class="dot">.</span></div>
+  <ul class="nav-center">
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="nav-badge">Beta v0.1</div>
+</nav>
+
+<!-- HERO -->
+<main class="hero">
+  <div class="hero-left">
+    <div class="eyebrow">AI-Powered Housing Inspection</div>
+    <h1 class="hero-headline">Document<br>violations.</h1>
+    <p class="hero-subline">Evidence speaks.</p>
+    <p class="hero-body">
+      Upload a photo of your housing condition. Witness identifies code violations,
+      matches them to local housing law, and generates a formal complaint letter —
+      automatically.
+    </p>
+
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon-ring">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </div>
+      <p class="upload-main"><strong>Click to upload</strong> or drag &amp; drop</p>
+      <p class="upload-sub">JPG · PNG · HEIC · up to 20MB</p>
+      <button class="btn-upload" id="uploadBtn">Upload Photo</button>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="f-num">01 — Scan</div>
+        <div class="f-title">AI Image Analysis</div>
+        <p class="f-desc">Computer vision identifies visible housing violations from your photo with high precision.</p>
+      </div>
+      <div class="feature-item">
+        <div class="f-num">02 — Match</div>
+        <div class="f-title">Code Cross-Reference</div>
+        <p class="f-desc">Each violation is matched against local housing maintenance codes and legal statutes.</p>
+      </div>
+      <div class="feature-item">
+        <div class="f-num">03 — Act</div>
+        <div class="f-title">Complaint Generation</div>
+        <p class="f-desc">A legally-informed complaint letter is generated, ready to send to your landlord or housing authority.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" class="section-wrap">
+  <div class="section-eyebrow">The Process</div>
+  <h2 class="section-heading">How It Works</h2>
+
+  <div class="hiw-grid">
+
+    <div class="hiw-card">
+      <div class="hiw-step">Step 01 — Vision Analysis</div>
+      <div class="hiw-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <div class="hiw-title">Vision Analysis</div>
+      <p class="hiw-body">
+        Claude AI scans your uploaded photo using computer vision, identifying visible housing
+        conditions — mold growth, structural damage, faulty plumbing, fire hazards, pest evidence,
+        and electrical issues. Each observation is categorized by type (structural, plumbing,
+        environmental, etc.) and assigned a confidence level based on what's visible in the photo.
+      </p>
+      <div class="hiw-detail">
+        <span class="hiw-tag">Mold &amp; Moisture</span>
+        <span class="hiw-tag">Structural Damage</span>
+        <span class="hiw-tag">Electrical &amp; Fire Hazards</span>
+        <span class="hiw-tag">Pest Infestation</span>
+      </div>
+    </div>
+
+    <div class="hiw-card">
+      <div class="hiw-step">Step 02 — Code Matching</div>
+      <div class="hiw-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <div class="hiw-title">Code Matching &amp; Citation Verification</div>
+      <p class="hiw-body">
+        Every observed condition is cross-referenced against a real housing code database for your
+        jurisdiction — currently Blacksburg, VA. Each matched violation includes the exact code
+        section, a plain-English explanation, and the reasoning behind the match. Nothing is
+        freely generated: every citation is verified against the actual database before it
+        appears in your report.
+      </p>
+      <div class="hiw-detail">
+        <span class="hiw-tag">Real database — not generated</span>
+        <span class="hiw-tag">Exact code citations</span>
+        <span class="hiw-tag">Blacksburg, VA jurisdiction</span>
+      </div>
+    </div>
+
+    <div class="hiw-card">
+      <div class="hiw-step">Step 03 — Complaint Generation</div>
+      <div class="hiw-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div class="hiw-title">Complaint Generation</div>
+      <p class="hiw-body">
+        Verified violations are compiled into a formal complaint letter with accurate legal
+        citations, ready to send to your landlord or file with local housing authorities.
+        You also receive local enforcement contact information and a timestamped evidence log —
+        everything you need to take action. All outputs are yours to download and keep.
+      </p>
+      <div class="hiw-detail">
+        <span class="hiw-tag">Formal complaint letter</span>
+        <span class="hiw-tag">Enforcement contacts</span>
+        <span class="hiw-tag">Timestamped evidence log</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section-wrap">
+  <div class="section-eyebrow">Common Questions</div>
+  <h2 class="section-heading">FAQ</h2>
+
+  <div class="faq-grid">
+
+    <div class="faq-item">
+      <div class="faq-q">Is this legal advice?</div>
+      <p class="faq-a">No — informational only. Witness identifies and documents potential housing code violations to help you understand your situation. <strong>Consult a licensed attorney</strong> before taking formal legal action.</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">What jurisdictions are supported?</div>
+      <p class="faq-a">Currently <strong>Blacksburg, VA</strong>. The underlying architecture is modular and designed for expansion — additional jurisdictions can be added as the database grows.</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Is my photo stored?</div>
+      <p class="faq-a">Your photo is uploaded <strong>temporarily to AWS S3</strong> for processing only and is not retained beyond the analysis session. No images are stored permanently or shared.</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">What if the AI finds nothing?</div>
+      <p class="faq-a">You'll see a clear <strong>"no violations detected"</strong> result. This may mean the photo didn't capture a violation clearly enough, or the conditions shown don't meet the threshold for a code match in your jurisdiction.</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">How accurate is it?</div>
+      <p class="faq-a">All code citations are <strong>verified against a real housing code database</strong> — not freely generated by the AI. The matching step uses structured data, not language model output, to confirm each violation reference.</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can my landlord see this?</div>
+      <p class="faq-a">No. <strong>Your report is yours alone.</strong> Nothing is shared with your landlord, property management, or any third party. You decide if and how to use the generated letter.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Witness<span class="dot">.</span></div>
+  <div class="footer-note">For informational use only. Not a substitute for legal advice.</div>
+  <div class="footer-badge">Beta v0.1</div>
+</footer>
+
+<script>
+const zone      = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+
+uploadBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  fileInput.click();
+});
+
+zone.addEventListener('click', () => fileInput.click());
+
+zone.addEventListener('dragover', e => {
+  e.preventDefault();
+  zone.classList.add('dragover');
+});
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    localStorage.setItem('witnessImage', ev.target.result);
+    window.location.href = 'loading.html';
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>

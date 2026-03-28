@@ -13,14 +13,14 @@ A mobile-first web app that helps Virginia tenants document housing violations u
 ## 🏗️ Architecture
 
 **3-Stage AI Pipeline** orchestrated by AWS Step Functions:
-- **Stage 1**: Vision analysis using Amazon Bedrock Claude 3.5 Haiku
+- **Stage 1**: Vision analysis using Amazon Bedrock Claude Haiku 4.5
 - **Stage 2**: Code matching with anti-hallucination verification
 - **Stage 3**: Complaint letter generation with enforcement contacts
 
 **Tech Stack**:
 - Frontend: React 18 + Vite + Tailwind CSS
 - Backend: AWS Lambda (Node.js 22, TypeScript)
-- AI: Amazon Bedrock (Claude with vision)
+- AI: Amazon Bedrock (Claude Haiku 4.5 with vision)
 - Database: DynamoDB (housing codes + contacts)
 - Storage: S3 (photo uploads)
 - API: API Gateway HTTP API
@@ -41,7 +41,7 @@ witness/
 │   ├── frontend/       # React application
 │   └── shared/         # TypeScript types
 ├── ARCHITECTURE.md     # Detailed system architecture
-├── PROJECT-STATUS.md   # Current progress & checklist
+├── BACKEND-READY-TO-MERGE.md  # Backend integration guide
 └── README.md           # This file
 ```
 
@@ -62,52 +62,30 @@ witness/
 
 2. **Review documentation**
    - Read `ARCHITECTURE.md` for system design
-   - Read `PROJECT-STATUS.md` for current progress
+   - Read `BACKEND-READY-TO-MERGE.md` for API integration
    - Check `.kiro/specs/witness-backend-api/requirements.md` for detailed requirements
 
-3. **AWS Setup** (see ARCHITECTURE.md for details)
-   - Create S3 bucket
-   - Create DynamoDB tables
-   - Enable Bedrock model access
-   - Deploy Lambda functions
-   - Create Step Functions workflow
-   - Set up API Gateway
+3. **AWS Setup** (see BACKEND-READY-TO-MERGE.md for details)
+   - Backend is already deployed to AWS
+   - API Base URL: `https://mbqglb3kxc.execute-api.us-east-1.amazonaws.com`
 
-4. **Seed Data**
-   ```bash
-   cd scripts
-   npm run seed
-   ```
-
-5. **Deploy Frontend**
+4. **Frontend Setup**
    ```bash
    cd src/frontend
    npm install
-   npm run build
-   # Deploy to AWS Amplify
+   # Create .env file with API_BASE_URL
+   npm run dev
    ```
 
 ## 📊 Current Status
 
 ✅ **Completed**:
-- Project structure organized
-- Requirements document
-- All steering files
-- Data files (22 Virginia codes)
-- Demo photos (5 test cases)
-- Architecture documentation
-
-⏳ **In Progress**:
-- Design document (next step)
-- Tasks document
-
-⏳ **Todo**:
-- Backend implementation
-- Frontend implementation
-- AWS deployment
-- End-to-end testing
-
-See `PROJECT-STATUS.md` for detailed checklist.
+- Backend fully implemented and deployed to AWS
+- All 6 Lambda functions working
+- DynamoDB seeded with 28 items
+- API Gateway configured with CORS
+- Step Functions Express workflow deployed
+- Frontend implementation complete
 
 ## 🎓 Key Features
 
@@ -133,7 +111,7 @@ Provides multiple filing options:
 ## 📚 Documentation
 
 - **ARCHITECTURE.md** - Complete system architecture, data flow, AWS services
-- **PROJECT-STATUS.md** - Current progress, checklist, next steps
+- **BACKEND-READY-TO-MERGE.md** - Backend integration guide with API details
 - **.kiro/specs/** - Formal requirements, design, and tasks
 - **.kiro/steering/** - AI guidance files for development
 - **prompts/** - AI system prompts for each pipeline stage
@@ -184,5 +162,5 @@ This is a hackathon project. For questions or contributions, please open an issu
 
 **Built for**: AWS + Kiro Hackathon  
 **Region**: Virginia (Blacksburg focus)  
-**Status**: In Development  
+**Status**: Backend Deployed, Frontend Integration Ready  
 **Last Updated**: March 28, 2026
