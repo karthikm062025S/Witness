@@ -395,12 +395,12 @@ nav {
 }
 
 .contact-card {
-  background: #234a3a;
+  background: var(--surface);
   padding: 24px 26px;
   position: relative;
   transition: background 0.2s ease;
 }
-.contact-card:hover { background: #2a5544; }
+.contact-card:hover { background: var(--elevated); }
 .contact-card::after {
   content: '';
   position: absolute;
@@ -961,17 +961,26 @@ function renderComplaintLetter(text, violations) {
     return t.length > 3 && t === t.toUpperCase() && /^[A-Z\s\-:]+$/.test(t) && !t.startsWith('RE:');
   }
 
-  // Detect numbered violation line: "1. CODE – Title" or "1. CODE: Title"
+  // Detect numbered violation line: "1. CODE – Title" or "1. Title (CODE)"
   function isViolationLine(line) {
     return /^\d+\.\s+[A-Z§]/.test(line.trim());
   }
 
   // Parse a violation line to extract code and title
   function parseViolationLine(line) {
-    var m = line.trim().match(/^(\d+)\.\s+(VMC\s*§\s*[\d.]+|Va\.\s*Code\s*§\s*[\S]+)\s*[–—-]\s*(.+)/);
-    if (m) return { num: m[1], code: m[2].trim(), title: m[3].trim() };
-    var m2 = line.trim().match(/^(\d+)\.\s+(.+?)\s*[–—-]\s*(.+)/);
-    if (m2) return { num: m2[1], code: m2[2].trim(), title: m2[3].trim() };
+    var t = line.trim();
+    // Format A: "1. VMC § 604.1 – Title: description"  (code comes first, en/em dash only)
+    var mA = t.match(/^(\d+)\.\s+(VMC\s*§\s*[\d.]+|Va\.\s*Code\s*§\s*[\S()\d]+)\s*[–—]\s*(.+)/);
+    if (mA) return { num: mA[1], code: mA[2].trim(), title: mA[3].trim() };
+    // Format B: "1. Title (VMC § 604.1) — description"  (code in parens)
+    var mB = t.match(/^(\d+)\.\s+(.+?)\s*\((VMC\s*§\s*[\d.]+|Va\.\s*Code\s*§\s*[\S()\d]+(?:\([^)]*\))?)\)\s*[–—]?\s*(.*)/);
+    if (mB) return { num: mB[1], code: mB[3].trim(), title: mB[2].trim() + (mB[4] ? ' — ' + mB[4].trim() : '') };
+    // Format C: "1. TITLE (VMC § 604.1) description"  (space after paren, no dash)
+    var mC = t.match(/^(\d+)\.\s+(.+?)\s*\((VMC\s*§\s*[\d.]+|Va\.\s*Code\s*§\s*[\S()\d]+)\)\s+(.+)/);
+    if (mC) return { num: mC[1], code: mC[3].trim(), title: mC[2].trim() + ' — ' + mC[4].trim() };
+    // Fallback: just number + rest, no code chip
+    var mD = t.match(/^(\d+)\.\s+(.+)/);
+    if (mD) return { num: mD[1], code: mD[1], title: mD[2].trim() };
     return null;
   }
 
@@ -1029,7 +1038,10 @@ function renderComplaintLetter(text, violations) {
         body += ' ' + lines[j].trim(); j++;
       }
       if (parsed) {
-        html += '<ul class="letter-violation-list"><li class="letter-violation-item"><span class="lv-num">' + escHtml(parsed.code) + '</span><span class="lv-content"><strong>' + escHtml(parsed.title) + '</strong>' + (body ? ' — ' + escHtml(body.trim()) : '') + '</span></li></ul>';
+        var bodyText = body ? body.trim() : '';
+        var titleHtml = escHtml(parsed.title);
+        // Bold the code reference if it appears in the title
+        html += '<ul class="letter-violation-list"><li class="letter-violation-item"><span class="lv-num">' + escHtml(parsed.code) + '</span><span class="lv-content">' + titleHtml + (bodyText ? ' ' + escHtml(bodyText) : '') + '</span></li></ul>';
       } else {
         html += '<ul class="letter-violation-list"><li class="letter-violation-item"><span class="lv-num">' + escHtml(trimmed.match(/^\d+/)[0]) + '</span><span class="lv-content">' + escHtml(trimmed.replace(/^\d+\.\s*/, '')) + (body ? ' ' + escHtml(body.trim()) : '') + '</span></li></ul>';
       }
