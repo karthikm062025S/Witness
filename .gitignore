@@ -25,6 +25,11 @@ build/
 *.swo
 *~
 
+# Local agent config / workspace notes (never shipped publicly)
+.claude/settings.local.json
+PROJECT.md
+_index.md
+
 # OS
 .DS_Store
 Thumbs.db
