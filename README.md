@@ -4,7 +4,7 @@
 
 **Devpost: https://devpost.com/software/witness-f9ijzq** · Built at the AWS + Kiro Hackathon, Virginia Tech, Blacksburg VA, March 2026.
 
-Live API (hackathon deployment, still running): `https://mbqglb3kxc.execute-api.us-east-1.amazonaws.com`. No hosted frontend, this is the raw AWS endpoint the pipeline runs behind.
+Deployed on AWS for the hackathon and since torn down; the Devpost page has the demo. To run it yourself, see [Run it locally](#run-it-locally).
 
 ## How it works
 
